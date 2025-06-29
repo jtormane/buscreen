@@ -214,7 +214,7 @@
 	    const windDirCompass = getDirection(windDirDeg);
             weatherDiv.innerHTML = `
 	    <p><strong>lämpötila:</strong> ${weather.temperature}°C</p>
-  	    <p><strong>tuuli:</strong> Math.round(${weather.windspeed}/3.6) m/s ${windDirCompass}</p>
+	    <p><strong>tuuli:</strong> ${Math.round(weather.windspeed/3.6)} m/s ${windDirCompass}</p>
 	   `;
         })
         .catch(err => {
