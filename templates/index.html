@@ -215,9 +215,9 @@
             weatherDiv.innerHTML = `
 	    <p><strong>lämpötila:</strong> ${weather.temperature}°C</p>
 	    <p><strong>tuuli:</strong> ${Math.round(weather.windspeed/3.6)} m/s ${windDirCompass}</p>
-	   `;
-        })
-        .catch(err => {
+	   `;	
+	})	
+	    .catch(err => {
             document.getElementById('weather').textContent = "Sää ei saatavilla.";
             console.error("Weather fetch failed:", err);
         });
@@ -259,7 +259,11 @@ function startCountdown() {
 	startCountdown();
 	loadArrivals();
 	loadWeather();
+	setInterval(loadArrivals, 60000);
+	setInterval(loadWeather,90000);
+
 	clock();
+	setInterval(clock, 1000);
     </script>
 
 </body>
