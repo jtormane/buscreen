@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bussien aikataulut</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background-color: #000000;
+            color: white;
+	    padding-top: 2rem;
+        }
+
+        h1, h2 {
+            color: #d6336c;
+	    font-size: 50px;
+	    padding-left: 20px;
+        }
+
+        #arrivalList {
+            list-style-type: none;
+            padding-left: 20px;
+        }
+
+	.tree {
+            margin-left: 20px;
+	    font-size: 50px;
+            padding-left: 20px;
+            border-left: 2px solid #ddd;
+        }
+
+        .line {
+	    font-size: 50px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        #arrivalList .tree li {
+	    font-size: 50px;
+            list-style: none;
+            padding-left: 0.5em;
+            white-space: pre; /* Preserve spacing for tree lines */
+        }
+
+	 #date {
+ 	    font-size: 50px;
+	}
+	
+	#clock {
+		font-size: 50px;
+		color: white;
+	}
+
+
+	.container {
+		display: flex;
+		gap: 1rem;
+		align-items: flex-start;
+	}
+
+	.left {
+		flex: 1;
+		font-size: 50px;
+		padding-left: 1rem;
+	}
+
+	.right {
+		flex: 1;
+		padding: 1rem;
+		border-radius: 8px;
+		font-size: 50px;
+	}
+
+	#countdown {
+         	 font-size: 50px;
+ 		 margin-top: 2rem;
+ 		 color: #f0f0f0;
+		 padding-left: 0.em;
+	}
+	
+	.logo {
+   	 flex: 1;
+   	 font-size: 40px;
+   	 color: #2c75ff;
+	 padding-left: 0.2rem;
+	 white-space: pre;
+  	 background-color: #000000;
+   	 border-radius: 8px;
+   	 overflow-x: auto;
+ 	 max-width: 100%;
+        }
+
+
+	#asciiLogo {
+    	font-family: 'JetBrains Mono', monospace;
+ 	line-height: 1.2;
+	}
+
+        /* ❌ DO NOT add ::before dashes here */
+    </style>
+</head>
+<body>
+  <div class="top-bar">
+    <h2 id="date"></h2>
+    <h2 id="clock"></h2>
+  </div>
+
+  <div class="main container">
+    <div class="left box">
+      <ul id="arrivalList"></ul>
+      <!--</div>-->
+
+    <!--<div class="right box">-->
+      <div id="weather">
+        <p>Ladataan tietoja...</p>
+      </div>
+    </div>
+
+    <div class="logo box">
+	    <pre id="asciilogo">
+        /|
+       /S|
+      /SI|
+     /SIK|
+    /SIKS|
+   /SIKSI|
+  /SIKSIK|
+ /SIKSIKS|                    
+/SIKSIKSI|_________
+	 |SIKSIKSI/
+         |SIKSIKS/
+         |SIKSIK/
+         |SIKSI/
+	 |SIKS/
+         |SIK/
+         |SI/
+         |S/
+	 |/
+       =====
+        ===
+         =
+	</pre>
+    </div>
+  </div>
+  <h2>wappuun aikaa:</h2>
+  <h2 id="countdown"</h2>
+
+</body>
+
+    <script>
+        function loadArrivals(){
+            fetch('/api/arrivals/120545')
+                .then(res => res.json())
+                .then(data => {
+                const now = new Date();
+		const weekdays = ["sunnuntai", "maanantai", "tiistai", "keskiviikko", "torstai", "perjantai", "lauantai"];
+		const weekday = weekdays[now.getDay()];
+		const formattedDate = `${weekday} ${now.getDate()}.${now.getMonth() + 1}.${now.getFullYear()}`;
+		document.getElementById('date').textContent = formattedDate;
+                    const list = document.getElementById('arrivalList');
+                    list.innerHTML = "";
+
+                    const buses = {};
+
+                    // Group arrivals by line
+                    data.arrivals.forEach(a => {
+                        if (!buses[a.line]) {
+                            buses[a.line] = [];
+                        }
+                        buses[a.line].push({ destination: a.destination, time: a.time });
+                    });
+
+                    // Render each bus line with arrival tree
+                    Object.keys(buses).forEach(line => {
+                        const lineItem = document.createElement('li');
+			const loppu = document.createElement('li')
+                        lineItem.classList.add('line');
+                        lineItem.textContent = `bus${line}/arrivals/`;
+                        const sublist = document.createElement('ul');
+                        sublist.classList.add('tree');
+
+                        const arrivals = buses[line];
+                        arrivals.forEach((arrival, index) => {
+                            const subItem = document.createElement('li');
+                            const isLast = index === arrivals.length - 1;
+                            const branch = isLast ? "└──" : "├──";
+				subItem.textContent = `${branch} ${arrival.time}`;
+                            sublist.appendChild(subItem);
+                        });
+
+                        lineItem.appendChild(sublist);
+                        list.appendChild(lineItem);
+                    });
+                })
+                .catch(err => {
+                    console.error("Failed to fetch:", err);
+                });
+        }
+	
+	function getDirection(deg) {
+		const directions = ['↑','↗','→','↘','↓','↙','←','↖'];
+		const index = Math.round(deg / 45) % 8;
+		return directions[index];
+	}
+
+	function loadWeather() {
+ 	fetch('https://api.open-meteo.com/v1/forecast?latitude=65.01&longitude=25.47&current_weather=true')
+        .then(res => res.json())
+        .then(data => {
+            const weather = data.current_weather;
+            const weatherDiv = document.getElementById('weather');
+	    const windDirDeg = weather.winddirection;
+	    const windDirCompass = getDirection(windDirDeg);
+            weatherDiv.innerHTML = `
+	    <p><strong>lämpötila:</strong> ${weather.temperature}°C</p>
+  	    <p><strong>tuuli:</strong> ${weather.windspeed} m/s ${windDirCompass}</p>
+	   `;
+        })
+        .catch(err => {
+            document.getElementById('weather').textContent = "Sää ei saatavilla.";
+            console.error("Weather fetch failed:", err);
+        });
+}
+
+function clock(){
+	const now = new Date();
+	const hours = now.getHours().toString().padStart(2,'0');
+	const minutes = now.getMinutes().toString().padStart(2,'0');
+	const time = `${hours}:${minutes}`;
+	document.getElementById('clock').textContent = time;
+}
+
+function startCountdown() {
+  const countdownEl = document.getElementById('countdown');
+  const targetDate = new Date('2026-04-30T00:00:00');
+
+  function updateCountdown() {
+    const now = new Date();
+    const diff = targetDate - now;
+
+    if (diff <= 0) {
+      countdownEl.textContent = "0 päivää, 0 h, 0 min, 0 s";
+      return;
+    }
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+    const minutes = Math.floor((diff / (1000 * 60)) % 60);
+    const seconds = Math.floor((diff / 1000) % 60);
+    
+    countdownEl.textContent =		  
+      `${days} päivää, ${hours} h, ${minutes} min, ${seconds} s`;
+  }
+
+  updateCountdown(); // run once immediately
+  setInterval(updateCountdown, 1000); // update every second
+}
+	startCountdown();
+	loadArrivals();
+	loadWeather();
+	clock();
+    </script>
+
+</body>
+</html>
+

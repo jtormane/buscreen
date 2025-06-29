@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bussien aikataulut</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #242424;
+            color: white;
+        }
+
+        h1, h2 {
+            color: #d6336c;
+        }
+
+        #arrivalList {
+            list-style-type: none;
+            padding-left: 20px;
+        }
+
+        .tree {
+            margin-left: 20px;
+            padding-left: 20px;
+            border-left: 2px solid #ddd;
+        }
+
+        .line {
+            font-weight: bold;
+            margin-top: 5px;
+	}
+
+	#arrivalList .tree li {
+    list-style: none;
+    position: relative;
+    padding-left: 1em;
+}
+
+#arrivalList .tree li::before {
+    content: "-";
+    position: absolute;
+    left: 0;
+    color: white;
+}
+
+    </style>
+</head>
+<body>
+
+    <h1>Saapumisaika</h1>
+    <h2 id="date"></h2>
+    <ul id="arrivalList"></ul>
+
+    <script>
+        function loadArrivals(){
+            fetch('/api/arrivals/120545')
+                .then(res => res.json())
+                .then(data => {
+                    // Display the date
+                    document.getElementById('date').textContent = "Date: " + (data.date || "Unknown");
+
+                    const list = document.getElementById('arrivalList');
+                    list.innerHTML = "";
+
+                    // Group arrivals by bus line
+                    const buses = {};
+
+                    data.arrivals.forEach(a => {
+                        if (!buses[a.line]) {
+                            buses[a.line] = [];
+                        }
+                        buses[a.line].push({ destination: a.destination, time: a.time });
+                    });
+
+                    // Create the tree structure
+                    Object.keys(buses).forEach(line => {
+                        const lineItem = document.createElement('li');
+                        lineItem.classList.add('line');
+                        lineItem.textContent = `bus${line}/arrival/`;
+
+                        // Create sublist for the arrivals of this bus line
+                        const sublist = document.createElement('ul');
+                        sublist.classList.add('tree');
+                        
+                        buses[line].forEach(arrival => {
+                            const subItem = document.createElement('li');
+                            subItem.textContent = `${arrival.destination} at ${arrival.time}`;
+                            sublist.appendChild(subItem);
+                        });
+
+                        lineItem.appendChild(sublist);
+                        list.appendChild(lineItem);
+                    });
+                })
+                .catch(err => {
+                    console.error("Failed to fetch:", err);
+                });
+        }
+
+        loadArrivals();
+        setInterval(loadArrivals, 60000);
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+        <head>
+                <title>Bussien aikataulut</title>
+<style> 
+        body {
+                font-family: 'Courier New', Courier, monospace;
+        }
+        </head>
+</style>
+<body style = "background-color:#242424">
+        <h1>Saapumisaika</h1>
+        <h2 id="date"></h2>
+        <u1 id="arrivalList"></ul>
+
+        <script>
+                function loadArrivals(){
+                        fetch('/api/arrivals/120545')
+                                .then(res => res.json())
+                                .then(data => {
+                                        document.getElementById('date').textContent = "Date: " + (data.date || "Unknown");
+                                        const list = document.getElementById('arrivalList');
+                                        list.innerHTML = "";
+                                        data.arrivals.forEach(a=> {
+                                                const li = document.createElement('li');
+                                                li.textContent =`Line ${a.line} => ${a.destination} at ${a.time}`;
+                                                list.appendChild(li);
+                                        });
+                                })
+                                .catch(err => {
+                                        console.error("Failed to fetch:", err);
+                                });
+                        }
+
+                loadArrivals();
+                setInterval(loadArrivals,60000);
+        </script>
+</body>
+</html>
