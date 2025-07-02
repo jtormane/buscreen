@@ -150,7 +150,7 @@
 
     <script>
         function loadArrivals(){
-            fetch('/api/arrivals/120545')
+            fetch('/api/arrivals/120545') /* the stop can be changed here */
                 .then(res => res.json())
                 .then(data => {
                 const now = new Date();
